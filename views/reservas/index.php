@@ -471,6 +471,6 @@ document.getElementById('formReserva').addEventListener('submit', async (e) => {
 
 cargarEventos();
 </script>
-
+<script src="https://cdn.userway.org/widget.js" data-account="demo"></script>
 </body>
 </html>

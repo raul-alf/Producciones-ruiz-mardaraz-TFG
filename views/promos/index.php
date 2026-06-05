@@ -228,6 +228,7 @@
         document.body.style.overflow = "auto";
     }
 </script>
+<script src="https://cdn.userway.org/widget.js" data-account="demo"></script>
 
 </body>
 </html>

@@ -1138,7 +1138,7 @@ button {
 
         loadAllData();
     </script>
-    
+    <script src="https://cdn.userway.org/widget.js" data-account="demo"></script>
 </div>
 </body>
 </html>

@@ -6,14 +6,28 @@ try {
 
     $pdo = Database::connect();
 
-    // Contar las reservas por estado
-    $stmt = $pdo->query("SELECT estado, COUNT(*) AS total FROM reservas GROUP BY estado");
-    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->query("
+        SELECT 
+            id,
+            order_id,
+            producto,
+            precio,
+            fecha,
+            email,
+            imagen,
+            created_at,
+            event_date
+        FROM compras
+        ORDER BY created_at DESC
+    ");
+
+    $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
         'success' => true,
-        'data' => $data
+        'data' => $compras
     ]);
+
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,

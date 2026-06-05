@@ -339,9 +339,10 @@ button {
 
             <div class="admin-card" id="statsPanel" style="display:none;">
                 <h3 id="statsTitle">Estadísticas</h3>
+                
                 <div class="chart-card">
-                    <h4>Estado de reservas</h4>
-                    <div id="main"></div>
+                    <h4>Entradas vendidas del total</h4>
+                    <div id="chartEntradas" style="width:100%; height:400px;"></div>
                 </div>
 
                 <div class="stats-grid">
@@ -370,6 +371,27 @@ button {
                     SOLD OUT
                 </div>
 
+                <div id="editEntradasPanel" style="margin-top:20px; padding:20px; background:#222; border:1px solid #333; border-radius:8px;">
+                    <h4 style="color:#d4af37; margin-top:0; margin-bottom:15px;">Modificar detalles del evento</h4>
+                    <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:flex-end;">
+                        <div style="display:grid; gap:10px;">
+                            <div>
+                                <label style="display:block; color:#888; font-size:0.85em; margin-bottom:8px;">Total de entradas para este evento</label>
+                                <input type="number" id="inputEntradasTotales" placeholder="Número de entradas" style="width:100%; padding:10px; background:#000; border:1px solid #444; color:white; border-radius:4px;">
+                            </div>
+                            <div>
+                                <label style="display:block; color:#888; font-size:0.85em; margin-bottom:8px;">Precio por entrada (€)</label>
+                                <input type="number" step="0.01" id="inputPrecioEvento" placeholder="Precio del evento" style="width:100%; padding:10px; background:#000; border:1px solid #444; color:white; border-radius:4px;">
+                            </div>
+                        </div>
+                        <div style="display:grid; gap:10px;">
+                            <button onclick="guardarEntradasTotales()" style="padding:10px 20px; background:#d4af37; color:#000; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Guardar Entradas</button>
+                            <button onclick="guardarPrecioEvento()" style="padding:10px 20px; background:#0088ff; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Guardar Precio</button>
+                        </div>
+                    </div>
+                    <small style="color:#666; display:block; margin-top:10px;">Nota: El precio se usa en las ventas y se aplica al evento seleccionado.</small>
+                </div>
+
                 <div id="compradoresPanel" style="margin-top:30px;">
                     <h4 style="color:#d4af37; margin-bottom:15px; font-size:1.1em;">Listado de Compradores</h4>
                     <div id="compradoresTable" style="overflow-x: auto;">
@@ -380,10 +402,11 @@ button {
                                     <th style="padding:10px; text-align:left; color:#d4af37;">Email</th>
                                     <th style="padding:10px; text-align:right; color:#d4af37;">Precio</th>
                                     <th style="padding:10px; text-align:left; color:#d4af37;">Fecha</th>
+                                    <th style="padding:10px; text-align:center; color:#d4af37;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="compradoresList">
-                                <tr><td colspan="4" style="padding:20px; text-align:center; color:#888;">Cargando compradores...</td></tr>
+                                <tr><td colspan="5" style="padding:20px; text-align:center; color:#888;">Cargando compradores...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -449,6 +472,101 @@ button {
         }
 
         let dashboardChart;
+        let entradasChart;
+        let currentEventId = null;
+
+        function crearGraficoEntradas(vendidas, restantes) {
+            const chartDom = document.getElementById('chartEntradas');
+            if (!chartDom) return;
+
+            if (!entradasChart) {
+                entradasChart = echarts.init(chartDom);
+            }
+
+            const totalEntradas = vendidas + restantes;
+            const porcentajeVendidas = totalEntradas > 0 ? (vendidas / totalEntradas * 100).toFixed(1) : 0;
+            const porcentajeRestantes = totalEntradas > 0 ? (restantes / totalEntradas * 100).toFixed(1) : 0;
+
+            const option = {
+                backgroundColor: '#000',
+                tooltip: {
+                    trigger: 'item',
+                    formatter: (params) => {
+                        if (params.data.name === 'Vendidas') {
+                            return `${params.data.name}: ${params.data.value} entradas (${porcentajeVendidas}%)`;
+                        } else {
+                            return `${params.data.name}: ${params.data.value} entradas (${porcentajeRestantes}%)`;
+                        }
+                    }
+                },
+                legend: {
+                    bottom: '8%',
+                    left: 'center',
+                    textStyle: {
+                        color: '#ddd',
+                        fontSize: 12
+                    },
+                    data: ['Vendidas', 'Disponibles']
+                },
+                series: [
+                    {
+                        name: 'Entradas',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['50%', '50%'],
+                        itemStyle: {
+                            borderRadius: 8,
+                            borderColor: '#000',
+                            borderWidth: 2
+                        },
+                        label: {
+                            color: '#fff',
+                            fontSize: 14,
+                            formatter: (params) => {
+                                if (params.data.name === 'Vendidas') {
+                                    return `${params.data.name}\n${params.data.value}\n(${porcentajeVendidas}%)`;
+                                } else {
+                                    return `${params.data.name}\n${params.data.value}\n(${porcentajeRestantes}%)`;
+                                }
+                            }
+                        },
+                        labelLine: {
+                            lineStyle: {
+                                color: '#666'
+                            }
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 20,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        },
+                        data: [
+                            {
+                                value: vendidas,
+                                name: 'Vendidas',
+                                itemStyle: {
+                                    color: '#00ff00'
+                                }
+                            },
+                            {
+                                value: restantes,
+                                name: 'Disponibles',
+                                itemStyle: {
+                                    color: '#ff3131'
+                                }
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            entradasChart.setOption(option);
+            setTimeout(() => {
+                entradasChart.resize();
+            }, 200);
+        }
 
         async function cargarGraficoDashboard() {
             try {
@@ -537,6 +655,8 @@ button {
 
         async function abrirEstadisticasEvento(eventId, titulo) {
             try {
+                currentEventId = eventId;
+                
                 const res = await fetch(`<?= BASE_URL ?>api/event-stats?id=${eventId}&t=${Date.now()}`);
                 const data = await res.json();
 
@@ -552,6 +672,14 @@ button {
                 document.getElementById('statRestantes').innerText = data.restantes;
                 document.getElementById('statDinero').innerText = data.recaudado + ' €';
                 document.getElementById('statReservas').innerText = data.reservas_vip || 0;
+
+                // Cargar el número total de entradas en el input editable
+                const totalEntradas = data.vendidas + data.restantes;
+                document.getElementById('inputEntradasTotales').value = totalEntradas;
+                document.getElementById('inputPrecioEvento').value = data.precio_entrada || '';
+
+                // Crear gráfico de entradas vendidas
+                crearGraficoEntradas(data.vendidas, data.restantes);
 
                 if (data.restantes <= 0) {
                     document.getElementById('soldOutBox').style.display = 'block';
@@ -569,6 +697,10 @@ button {
                                     <td style="padding:10px; color:#ccc;">${c.email || 'N/A'}</td>
                                     <td style="padding:10px; text-align:right; color:#0f0;">${c.precio} €</td>
                                     <td style="padding:10px; color:#888; font-size:0.85em;">${c.fecha}</td>
+                                    <td style="padding:10px; text-align:center;">
+                                        <button onclick="descargarEntrada('${c.order_id}', '${c.email}')" style="padding:6px 12px; background:#0088ff; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:5px; font-size:0.85em;">Descargar</button>
+                                        <button onclick="eliminarCompra(${c.id}, '${c.order_id}')" style="padding:6px 12px; background:#ff3131; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;">Eliminar</button>
+                                    </td>
                                 </tr>
                             `;
                         }
@@ -579,15 +711,112 @@ button {
                                 <td style="padding:10px; color:#ccc;">${c.nombre || 'N/A'}</td>
                                 <td style="padding:10px; text-align:right; color:#0f0;">${c.personas} personas</td>
                                 <td style="padding:10px; color:#888; font-size:0.85em;">${c.telefono || 'N/A'}</td>
+                                <td style="padding:10px; text-align:center;">
+                                    <button onclick="eliminarReserva(${c.id})" style="padding:6px 12px; background:#ff3131; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;">Eliminar</button>
+                                </td>
                             </tr>
                         `;
                     }).join('');
                 } else {
-                    compradoresList.innerHTML = '<tr><td colspan="4" style="padding:20px; text-align:center; color:#888;">No hay compradores ni reservas aún.</td></tr>';
+                    compradoresList.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center; color:#888;">No hay compradores ni reservas aún.</td></tr>';
                 }
             } catch (error) {
                 alert("Error cargando estadísticas del evento.");
                 console.error(error);
+            }
+        }
+
+        async function guardarEntradasTotales() {
+            if (!currentEventId) {
+                alert("No hay evento seleccionado.");
+                return;
+            }
+
+            const entradasTotales = document.getElementById('inputEntradasTotales').value;
+
+            if (!entradasTotales || entradasTotales <= 0) {
+                alert("Por favor ingresa un número válido de entradas.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`<?= BASE_URL ?>api/update-entradas-totales.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        eventId: currentEventId,
+                        entradasTotales: parseInt(entradasTotales)
+                    })
+                });
+
+                if (!res.ok) {
+                    console.error('HTTP Error:', res.status, res.statusText);
+                    alert(`Error HTTP: ${res.status}`);
+                    return;
+                }
+
+                const data = await res.json();
+                console.log('Response:', data);
+
+                if (!data.success) {
+                    alert(data.message || "Error al guardar los cambios.");
+                    return;
+                }
+
+                alert("Entradas totales actualizado correctamente.");
+                // Recargar las estadísticas del evento
+                abrirEstadisticasEvento(currentEventId, document.getElementById('statsTitle').innerText.replace('Estadísticas - ', ''));
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert("Error al guardar los cambios: " + error.message);
+            }
+        }
+
+        async function guardarPrecioEvento() {
+            if (!currentEventId) {
+                alert("No hay evento seleccionado.");
+                return;
+            }
+
+            const precio = document.getElementById('inputPrecioEvento').value;
+
+            if (!precio || precio <= 0) {
+                alert("Por favor ingresa un precio válido.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`<?= BASE_URL ?>api/update-event-price.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        eventId: currentEventId,
+                        precio: parseFloat(precio)
+                    })
+                });
+
+                if (!res.ok) {
+                    console.error('HTTP Error:', res.status, res.statusText);
+                    alert(`Error HTTP: ${res.status}`);
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || "Error al guardar el precio.");
+                    return;
+                }
+
+                alert("Precio del evento actualizado correctamente.");
+                abrirEstadisticasEvento(currentEventId, document.getElementById('statsTitle').innerText.replace('Estadísticas - ', ''));
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert("Error al guardar el precio: " + error.message);
             }
         }
 
@@ -613,6 +842,113 @@ button {
             } catch (error) {
                 alert("Error al cambiar la visibilidad del evento.");
                 console.error(error);
+            }
+        }
+
+        async function descargarEntrada(orderId, email) {
+            try {
+                const res = await fetch(`<?= BASE_URL ?>api/download-ticket.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        email: email
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || 'Error al descargar la entrada');
+                    return;
+                }
+
+                // Crear un blob con el HTML
+                const htmlContent = data.html;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = window.URL.createObjectURL(blob);
+                
+                // Crear link de descarga
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = data.fileName;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Limpiar
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                alert('Entrada descargada correctamente');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al descargar la entrada: ' + error.message);
+            }
+        }
+
+        async function eliminarCompra(id, orderId) {
+            if (!confirm(`¿Estás seguro de que deseas eliminar la compra ${orderId}?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`<?= BASE_URL ?>api/delete-purchase.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: id
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || 'Error al eliminar la compra');
+                    return;
+                }
+
+                alert('Compra eliminada correctamente');
+                // Recargar estadísticas
+                abrirEstadisticasEvento(currentEventId, document.getElementById('statsTitle').innerText.replace('Estadísticas - ', ''));
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al eliminar la compra: ' + error.message);
+            }
+        }
+
+        async function eliminarReserva(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar esta reserva?')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`<?= BASE_URL ?>api/delete-reservation.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: id
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || 'Error al eliminar la reserva');
+                    return;
+                }
+
+                alert('Reserva eliminada correctamente');
+                // Recargar estadísticas
+                abrirEstadisticasEvento(currentEventId, document.getElementById('statsTitle').innerText.replace('Estadísticas - ', ''));
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al eliminar la reserva: ' + error.message);
             }
         }
 

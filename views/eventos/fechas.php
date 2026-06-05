@@ -201,7 +201,7 @@
                     month: 'long'
                 });
 
-                const urlCompra = '<?= BASE_URL ?>compra?fiesta=' + encodeURIComponent(titulo) + '&img=' + encodeURIComponent(event.image) + '&date=' + encodeURIComponent(event.date);
+                const urlCompra = '<?= BASE_URL ?>compra?fiesta=' + encodeURIComponent(titulo) + '&img=' + encodeURIComponent(event.image) + '&date=' + encodeURIComponent(event.date) + '&id=' + encodeURIComponent(event.id);
 
                 grid.innerHTML += `
                     <div class="flyer-card">

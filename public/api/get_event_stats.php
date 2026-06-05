@@ -38,7 +38,7 @@ if ($eventId <= 0) {
 
 try {
     // Datos del evento
-    $stmt = $conn->prepare("SELECT entradas_totales, precio_entrada FROM eventos WHERE id = ?");
+    $stmt = $conn->prepare("SELECT entradas_totales, precio_entrada FROM events WHERE id = ?");
     $stmt->execute([$eventId]);
     $evento = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -53,14 +53,14 @@ try {
     $entradasTotales = intval($evento['entradas_totales']);
 
     // Entradas vendidas
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM entradas WHERE event_id = ? AND estado = 'pagada'");
-    $stmt->execute([$eventId]);
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM compras WHERE product_id = ? OR evento_id = ?");
+    $stmt->execute([$eventId, $eventId]);
     $vendidas = intval($stmt->fetchColumn());
 
     // Dinero recaudado
-    $stmt = $conn->prepare("SELECT SUM(precio) FROM entradas WHERE event_id = ? AND estado = 'pagada'");
-    $stmt->execute([$eventId]);
-    $recaudado = floatval($stmt->fetchColumn());
+    $stmt = $conn->prepare("SELECT SUM(precio) FROM compras WHERE product_id = ? OR evento_id = ?");
+    $stmt->execute([$eventId, $eventId]);
+    $recaudado = floatval($stmt->fetchColumn() ?? 0);
 
     // Reservas VIP
     $stmt = $conn->prepare("SELECT COUNT(*) FROM reservas WHERE evento_id = ? AND tipo = 'VIP'");
@@ -74,7 +74,8 @@ try {
         "vendidas" => $vendidas,
         "restantes" => $restantes,
         "recaudado" => number_format($recaudado, 2, ',', '.'),
-        "reservas_vip" => $reservasVip
+        "reservas_vip" => $reservasVip,
+        "precio_entrada" => floatval($evento['precio_entrada'])
     ]);
 
 } catch (Exception $e) {

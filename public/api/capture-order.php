@@ -45,11 +45,14 @@ try {
 
     // Agregar columna event_date si no existe
     try {
-        $db->exec("ALTER TABLE compras ADD COLUMN event_date DATE NOT NULL DEFAULT CURRENT_DATE");
+        $existingColumn = $db->query("SHOW COLUMNS FROM compras LIKE 'event_date'");
+        if ($existingColumn && $existingColumn->rowCount() === 0) {
+            $db->exec("ALTER TABLE compras ADD COLUMN event_date DATE NOT NULL DEFAULT '1970-01-01'");
+        }
     } catch (Exception $e) {
-        // La columna ya existe, ignorar error
+        // La columna ya existe o la versión de MySQL no soporta DEFAULT CURRENT_DATE.
+        // Ignoramos el error para no interrumpir la compra.
     }
-
 
     $stmt = $db->prepare(
         "INSERT INTO compras (order_id, producto, precio, fecha, event_date, email, imagen)
@@ -125,17 +128,33 @@ try {
         . "\nPrecio: " . number_format($precio, 2) . " €\n\nPuedes ver tu ticket en: " . $ticketUrl
         . "\n\nPresenta este correo en la entrada del evento.\n\n¡Nos vemos pronto en Cafe Pub La Luna!";
 
-    $mail->send();
+    $mailSent = false;
+    $mailError = '';
+
+    try {
+        $mail->send();
+        $mailSent = true;
+    } catch (Exception $mailEx) {
+        $mailError = $mailEx->getMessage();
+    }
 
     if (file_exists($qrTempPath)) {
         unlink($qrTempPath);
+    }
+
+    $responseMessage = 'Compra registrada correctamente.';
+    if ($mailSent) {
+        $responseMessage = 'Compra registrada y correo enviado.';
+    } else {
+        $responseMessage .= ' No se pudo enviar el correo: ' . $mailError;
     }
 
     echo json_encode([
         'success' => true,
         'order_id' => $orderID,
         'ticket_url' => $ticketUrl,
-        'message' => 'Compra registrada y correo enviado.'
+        'message' => $responseMessage,
+        'email_sent' => $mailSent
     ]);
 } catch (Exception $e) {
     if (!empty($qrTempPath) && file_exists($qrTempPath)) {

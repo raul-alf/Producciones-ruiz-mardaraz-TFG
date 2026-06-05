@@ -30,7 +30,7 @@ class EventoController extends Controller
 {
     $stmt = $this->db->prepare("
         SELECT entradas_totales, precio_entrada 
-        FROM eventos 
+        FROM events 
         WHERE id = ?
     ");
     $stmt->execute([$eventId]);

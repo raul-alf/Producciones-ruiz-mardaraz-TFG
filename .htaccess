@@ -1,0 +1,10 @@
+RewriteEngine On
+#Establece la base para las redirecciones
+RewriteBase /TFG_PRODUCCIONES/public/
+
+#Si no es un archivo real...
+RewriteCond %{REQUEST_FILENAME} !-f
+#Y no es un directorio real...
+RewriteCond %{REQUEST_FILENAME} !-d
+#Envíalo todo al index.php
+RewriteRule ^(.*)$ index.php [L,QSA]

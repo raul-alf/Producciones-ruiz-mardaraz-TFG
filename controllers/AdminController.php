@@ -79,7 +79,9 @@ class AdminController extends Controller
                 return;
             }
 
-            $nombreEvento = $evento['title'] ?? $evento['status'] ?? 'Evento Luna';
+            $tituloEvento = trim($evento['title'] ?? '');
+            $estadoEvento = trim($evento['status'] ?? '');
+            $nombreEvento = $tituloEvento !== '' ? $tituloEvento : ($estadoEvento !== '' ? $estadoEvento : 'Evento Luna');
             $fechaEvento = substr($evento['date'] ?? date('Y-m-d'), 0, 10); // Asegurar formato YYYY-MM-DD
             $entradasTotales = intval($evento['entradas_totales'] ?? 0);
 

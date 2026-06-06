@@ -88,16 +88,16 @@ try {
 
     $mail = new PHPMailer(true);
     $mail->isSMTP();
-    $mail->Host = 'smtp.example.com';
+    $mail->Host = 'smtp.ionos.es';
     $mail->SMTPAuth = true;
-    $mail->Username = 'smtp-user@example.com';
-    $mail->Password = 'smtp-password';
+    $mail->Username = 'mailer@rauljc.es';
+    $mail->Password = 'RaUl23112006.';
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
 
-    $mail->setFrom('no-reply@cafepublaluna.com', 'Cafe Pub La Luna');
+    $mail->setFrom('mailer@rauljc.es', 'Cafe Pub La Luna');
     $mail->addAddress($email);
-    $mail->addReplyTo('info@cafepublaluna.com', 'Cafe Pub La Luna');
+    $mail->addReplyTo('mailer@rauljc.es', 'Cafe Pub La Luna');
     $mail->addEmbeddedImage($qrTempPath, 'qr_ticket', 'qr_ticket.png');
 
     $mail->isHTML(true);
